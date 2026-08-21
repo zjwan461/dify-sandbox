@@ -32,11 +32,25 @@ print(result.stdout)  # Output: Hello from sandbox!
 # Run Node.js code
 result = client.run_nodejs("console.log('Hello from Node.js!')")
 print(result.stdout)  # Output: Hello from Node.js!
+
+# Upload a Python script and run it from the sandbox upload directory
+with open("hello.py", "rb") as f:
+    uploaded = client.upload_file(f, filename="hello.py")
+
+result = client.run_command(
+    command="python3",
+    args=[uploaded.filename],
+    timeout=30,
+)
+print(result.stdout)
 ```
 
 ## Features
 
 - **Code Execution**: Run Python and Node.js code in a secure sandbox
+- **Command Execution**: Launch sandbox-approved binaries (e.g. `python3`,
+  `node`) against previously uploaded files via the deny-list enforced
+  `POST /v1/sandbox/run/command` endpoint
 - **File Operations**: Upload and download files to/from the sandbox
 - **Dependency Management**: View and manage sandbox dependencies
 - **Health Check**: Monitor sandbox server status
@@ -82,6 +96,52 @@ print(result.stdout)
 print(result.stderr)
 print(result.exit_code)
 ```
+
+### Command Execution
+
+Run a sandbox-approved binary against a file that was previously uploaded
+to the sandbox via `upload_file`. The endpoint enforces a deny-list of
+dangerous commands (shells, `rm`, `sudo`, package managers, …) and rejects
+any argument containing shell metacharacters so the request can never
+accidentally spawn a shell.
+
+```python
+# 1. Upload the script you want to execute
+with open("hello.py", "rb") as f:
+    uploaded = client.upload_file(f, filename="hello.py")
+
+# 2. Invoke python3 with the uploaded file as an argument
+result = client.run_command(
+    command="python3",            # Command basename (resolved via PATH)
+    args=[uploaded.filename],     # Arguments; cannot contain shell metachars
+    work_dir="",                  # "" or "." → sandbox upload_dir; or a relative subdir
+    timeout=30,                   # 0 → use the sandbox worker timeout
+    enable_network=False,         # Must respect global enable_network setting
+)
+
+print(result.stdout)
+print(result.stderr)
+print(result.exit_code)
+```
+
+#### `work_dir` rules
+
+| Input                | Result                                                |
+|----------------------|-------------------------------------------------------|
+| `""` or `"."`        | Resolved to the sandbox `upload_dir` itself           |
+| `"scripts"`          | Resolved to `<upload_dir>/scripts`                    |
+| `<upload_dir>` (absolute) | Resolved to `upload_dir` itself                  |
+| `/etc`, `../etc`, …  | Rejected with `work_dir is invalid: ...`              |
+
+#### Deny-list
+
+The deny-list is the union of a built-in default (shells, `rm`, `sudo`,
+`apt`, `pip3`, `npm`, …) and the operator-configured
+`blocked_commands` list. User configuration can only add entries — never
+remove them. Commands that match the deny-list, or arguments containing
+shell metacharacters (`|`, `&`, `;`, `<`, `>`, `` ` ``, `$`, `*`, `?`,
+`{`, `}`, `~`, `!`, `#`, quotes, …) are rejected with a 400 before any
+process is spawned.
 
 ### File Operations
 
@@ -150,6 +210,18 @@ class RunCodeResponse:
     stdout: str      # Standard output from code execution
     stderr: str      # Standard error from code execution
     exit_code: int   # Exit code (0 = success)
+    error: str       # Sandbox-side error message (empty on success)
+```
+
+### RunCommandResponse
+
+```python
+@dataclass
+class RunCommandResponse:
+    stdout: str      # Standard output from the executed command
+    stderr: str      # Standard error from the executed command
+    exit_code: int   # Exit code (0 = success)
+    error: str       # Sandbox-side error message (empty on success)
 ```
 
 ### UploadFileResponse
@@ -180,6 +252,39 @@ class DifySandboxResponse:
     data: Any       # Response data
 ```
 
+## End-to-end Example: Upload a Script, Then Run It
+
+```python
+from dify_sandbox import DifySandboxClient
+
+client = DifySandboxClient(base_url="http://localhost:8194", api_key="dify-sandbox")
+
+# Local script we want to run inside the sandbox
+script = b"""
+import sys
+print("hello from the sandbox!")
+print("args:", sys.argv[1:])
+"""
+
+# 1. Upload the script — the server stores it in upload_dir and returns the
+#    filename it used (a UUID is appended to avoid collisions).
+with open("hello.py", "wb") as f:
+    f.write(script)
+
+uploaded = client.upload_file("hello.py")
+print("uploaded as:", uploaded.filename)
+
+# 2. Run python3 with the uploaded file as its argument.
+result = client.run_command(
+    command="python3",
+    args=[uploaded.filename],
+    timeout=10,
+)
+
+assert result.exit_code == 0, result.stderr
+print(result.stdout)
+```
+
 ## Examples
 
 See the `examples/` directory for complete usage examples:
@@ -187,6 +292,7 @@ See the `examples/` directory for complete usage examples:
 - `basic_usage.py` - Basic code execution examples
 - `file_operations.py` - File upload and download examples
 - `dependency_management.py` - Dependency management examples
+- `command_execution.py` - Upload a script and run it through the deny-list-enforced `run_command` endpoint
 
 ## Error Handling
 
@@ -198,6 +304,11 @@ try:
 except Exception as e:
     print(f"Error: {e}")
 ```
+
+`run_command` raises the same kind of exception when the deny-list rejects
+the command, when an argument contains shell metacharacters, or when the
+work directory is invalid — the exception message is the human-readable
+reason returned by the sandbox.
 
 ## License
 
