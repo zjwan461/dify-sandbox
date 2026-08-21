@@ -76,3 +76,42 @@ func DownloadFile(filename string) (string, error) {
 
 	return filePath, nil
 }
+
+// DeleteFile removes a file from the uploads directory
+func DeleteFile(filename string) (*types.DifySandboxResponse, error) {
+	uploadDir := static.GetDifySandboxGlobalConfigurations().UploadDir
+
+	// Sanitize filename to prevent path traversal
+	filename = filepath.Base(filename)
+	if filename == "." || filename == ".." || strings.Contains(filename, "/") {
+		return types.ErrorResponse(-400, "invalid filename"), nil
+	}
+
+	filePath := filepath.Join(uploadDir, filename)
+
+	// Security check: ensure the resolved path is within the upload directory
+	absUploadDir, err := filepath.Abs(uploadDir)
+	if err != nil {
+		return types.ErrorResponse(-500, fmt.Sprintf("failed to resolve upload directory: %v", err)), nil
+	}
+	absFilePath, err := filepath.Abs(filePath)
+	if err != nil {
+		return types.ErrorResponse(-500, fmt.Sprintf("failed to resolve file path: %v", err)), nil
+	}
+	if !strings.HasPrefix(absFilePath, absUploadDir+string(os.PathSeparator)) && absFilePath != absUploadDir {
+		return types.ErrorResponse(-400, "invalid file path"), nil
+	}
+
+	// Check if file exists
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		return types.ErrorResponse(-404, "file not found"), nil
+	}
+
+	// Delete the file
+	if err := os.Remove(filePath); err != nil {
+		return types.ErrorResponse(-500, fmt.Sprintf("failed to delete file: %v", err)), nil
+	}
+
+	return types.SuccessResponse(map[string]string{"message": "file deleted successfully"}), nil
+}
+

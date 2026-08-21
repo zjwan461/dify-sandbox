@@ -31,6 +31,7 @@ func InitFileRouter(Router *gin.RouterGroup) {
 	{
 		fileRouter.POST("upload", UploadFileController)
 		fileRouter.POST("download", DownloadFileController)
+		fileRouter.POST("delete", DeleteFileController)
 	}
 }
 

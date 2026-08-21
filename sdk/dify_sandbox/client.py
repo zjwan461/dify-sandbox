@@ -335,3 +335,25 @@ class DifySandboxClient:
             return save_path
         else:
             return response.content
+
+    def delete_file(self, filename: str) -> DifySandboxResponse:
+        """
+        Delete a file from the sandbox.
+
+        Args:
+            filename: Name of the file to delete
+
+        Returns:
+            DifySandboxResponse with deletion result
+
+        Example:
+            client.delete_file("uploaded_file.txt")
+        """
+        payload = {"filename": filename}
+        response = self._request("POST", "/v1/sandbox/file/delete", json=payload)
+        result = DifySandboxResponse.from_dict(response.json())
+
+        if not result.is_success:
+            raise Exception(f"API error: {result.message}")
+
+        return result

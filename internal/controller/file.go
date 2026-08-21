@@ -51,3 +51,17 @@ func DownloadFileController(c *gin.Context) {
 		c.File(filePath)
 	})
 }
+
+// DeleteFileController handles file delete requests
+func DeleteFileController(c *gin.Context) {
+	BindRequest(c, func(req struct {
+		Filename string `json:"filename" form:"filename" binding:"required"`
+	}) {
+		resp, err := service.DeleteFile(req.Filename)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, types.ErrorResponse(-500, err.Error()))
+			return
+		}
+		c.JSON(http.StatusOK, resp)
+	})
+}

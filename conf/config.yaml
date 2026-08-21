@@ -9,7 +9,7 @@ python_path: /opt/python/bin/python3
 enable_network: True # please make sure there is no network risk in your environment
 enable_preload: False # please keep it as False for security purposes
 log_path: "./logs" # path to store log files, default is "./logs"
-upload_dir: "./uploads" # path to store uploaded files, default is "./uploads"
+upload_dir: "/data/uploads" # path to store uploaded files, default is "./uploads"
 allowed_syscalls: # please leave it empty if you have no idea how seccomp works
 proxy:
   socks5: ''
