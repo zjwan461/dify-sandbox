@@ -86,6 +86,10 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# Create symlink for Python path compatibility
+# The config expects /opt/python/bin/python3 but python:3.12-bookworm has it at /usr/local/bin/python3
+RUN mkdir -p /opt/python/bin && ln -sf /usr/local/bin/python3 /opt/python/bin/python3
+
 # Copy compiled binaries from builder stage
 COPY --from=builder /app/main /main
 COPY --from=builder /app/env /env
