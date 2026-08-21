@@ -24,6 +24,7 @@ func Setup(Router *gin.Engine) {
 	InitRunRouter(PrivateGroup)
 	InitDependencyRouter(PrivateGroup)
 	InitFileRouter(PrivateGroup)
+	InitCommandRouter(PrivateGroup)
 }
 
 func InitFileRouter(Router *gin.RouterGroup) {
@@ -32,6 +33,22 @@ func InitFileRouter(Router *gin.RouterGroup) {
 		fileRouter.POST("upload", UploadFileController)
 		fileRouter.POST("download", DownloadFileController)
 		fileRouter.POST("delete", DeleteFileController)
+	}
+}
+
+func InitCommandRouter(Router *gin.RouterGroup) {
+	// /v1/sandbox/run/command — launch a previously uploaded file via a
+	// curated set of executables. Sits next to /run so the API surface
+	// around script execution stays grouped under "run".
+	commandRouter := Router.Group("run")
+	{
+		commandRouter.POST(
+			"command",
+			middleware.MaxRequest(static.GetDifySandboxGlobalConfigurations().MaxRequests),
+			middleware.MaxWorker(static.GetDifySandboxGlobalConfigurations().MaxWorkers),
+			middleware.TraceMiddleware(),
+			RunCommandController,
+		)
 	}
 }
 

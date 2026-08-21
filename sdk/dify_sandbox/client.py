@@ -11,6 +11,7 @@ import requests
 from .models import (
     DifySandboxResponse,
     RunCodeResponse,
+    RunCommandResponse,
     UploadFileResponse,
     DependencyInfo,
 )
@@ -357,3 +358,53 @@ class DifySandboxClient:
             raise Exception(f"API error: {result.message}")
 
         return result
+
+    def run_command(
+        self,
+        command: str,
+        args: Optional[list] = None,
+        work_dir: str = "",
+        timeout: int = 0,
+        enable_network: bool = False,
+    ) -> RunCommandResponse:
+        """
+        Run a sandbox-approved binary against a previously uploaded file.
+
+        The command basename is matched against the deny-list exposed by the
+        sandbox (shells, rm, sudo, package managers, ...). Any
+        argument that looks like a shell metacharacter is rejected so the
+        request cannot accidentally invoke a shell.
+
+        Args:
+            command: Command basename to execute, e.g. "python3".
+            args: Arguments to pass to the command (each must be
+                shell-metachar free).
+            work_dir: Working directory, relative to the sandbox upload
+                directory. Empty means the upload directory itself.
+            timeout: Optional per-request timeout in seconds. 0 means
+                use the sandbox-wide worker timeout.
+            enable_network: Forwarded to the sandbox only when the sandbox
+                itself was started with network access enabled.
+
+        Returns:
+            RunCommandResponse with execution results.
+
+        Example:
+            client.upload_file("hello.py")
+            result = client.run_command("python3", ["hello.py"])
+            print(result.stdout)
+        """
+        payload = {
+            "command": command,
+            "args": args or [],
+            "work_dir": work_dir,
+            "timeout": timeout,
+            "enable_network": enable_network,
+        }
+        response = self._request("POST", "/v1/sandbox/run/command", json=payload)
+        result = DifySandboxResponse.from_dict(response.json())
+
+        if not result.is_success:
+            raise Exception(f"API error: {result.message}")
+
+        return RunCommandResponse.from_dict(result.data)

@@ -17,3 +17,7 @@ proxy:
   https: ''
   no_proxy: ''
 allowed_env_vars: [] # list of environment variable names to propagate from the container to the script execution environment
+# Extra command basenames to block for the /v1/sandbox/run/command endpoint.
+# Merged with a built-in deny-list of dangerous commands (shells, rm, sudo,
+# package managers, ...). You can only widen the deny-list here, never shrink it.
+blocked_commands: []

@@ -114,4 +114,3 @@ func DeleteFile(filename string) (*types.DifySandboxResponse, error) {
 
 	return types.SuccessResponse(map[string]string{"message": "file deleted successfully"}), nil
 }
-

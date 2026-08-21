@@ -22,7 +22,13 @@ type DifySandboxGlobalConfigurations struct {
 	AllowedSyscalls          []int    `yaml:"allowed_syscalls"`
 	LogPath                  string   `yaml:"log_path"`
 	UploadDir                string   `yaml:"upload_dir"`
-	Proxy                    struct {
+	// BlockedCommands lists command basenames that are forbidden for the
+	// /v1/sandbox/run/command endpoint. It is merged with a built-in
+	// default deny-list at startup so user configuration can only make the
+	// deny-list stricter (or replace the default). Leave empty to keep the
+	// built-in defaults.
+	BlockedCommands []string `yaml:"blocked_commands"`
+	Proxy           struct {
 		Socks5  string `yaml:"socks5"`
 		Https   string `yaml:"https"`
 		Http    string `yaml:"http"`

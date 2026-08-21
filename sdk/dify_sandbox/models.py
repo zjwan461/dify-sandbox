@@ -51,6 +51,34 @@ class RunCodeResponse:
 
 
 @dataclass
+class RunCommandResponse:
+    """Response from the command execution endpoint.
+
+    Mirrors ``RunCodeResponse`` because both endpoints share the same
+    stdout/stderr/exit_code envelope. ``RunCommandResponse`` exists as a
+    separate type so callers can tell which endpoint produced the data
+    without inspecting the request URL.
+    """
+    stdout: str
+    stderr: str
+    error: str
+    exit_code: int
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "RunCommandResponse":
+        return cls(
+            stdout=data.get("stdout", ""),
+            stderr=data.get("stderr", ""),
+            error=data.get("error", ""),
+            exit_code=data.get("exit_code", -1),
+        )
+
+    @property
+    def is_success(self) -> bool:
+        return self.exit_code == 0 and not self.error
+
+
+@dataclass
 class UploadFileResponse:
     """Response from file upload endpoint"""
     filename: str

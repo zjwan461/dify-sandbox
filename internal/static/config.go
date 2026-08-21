@@ -212,12 +212,36 @@ func InitConfig(path string) error {
 		}
 	}
 
+	// BLOCKED_COMMANDS lets operators extend the deny-list for the
+	// /v1/sandbox/run/command endpoint without rebuilding the image. The
+	// built-in deny-list is always present, so the env var can only add
+	// entries (never remove them) — matching the file-config behaviour.
+	blocked_commands := os.Getenv("BLOCKED_COMMANDS")
+	if blocked_commands != "" {
+		parts := strings.Split(blocked_commands, ",")
+		for _, p := range parts {
+			trimmed := strings.TrimSpace(p)
+			if trimmed != "" {
+				difySandboxGlobalConfigurations.BlockedCommands = append(
+					difySandboxGlobalConfigurations.BlockedCommands, trimmed)
+			}
+		}
+	}
+
 	return nil
 }
 
 // avoid global modification, use value copy instead
 func GetDifySandboxGlobalConfigurations() types.DifySandboxGlobalConfigurations {
 	return difySandboxGlobalConfigurations
+}
+
+// SetDifySandboxGlobalConfigurationsForTest replaces the global
+// configuration in tests that do not have a Python interpreter available.
+// Production callers should always go through InitConfig so the resolver
+// and dependency discovery run.
+func SetDifySandboxGlobalConfigurationsForTest(cfg types.DifySandboxGlobalConfigurations) {
+	difySandboxGlobalConfigurations = cfg
 }
 
 type RunnerDependencies struct {

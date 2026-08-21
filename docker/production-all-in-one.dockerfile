@@ -30,7 +30,8 @@ RUN apt-get update \
 
 COPY . /app
 WORKDIR /app
-
+# 可选，改用阿里云源
+ENV GOPROXY=https://mirrors.aliyun.com/goproxy/,direct
 RUN go mod tidy
 
 # Build Python shared library
