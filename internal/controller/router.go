@@ -23,6 +23,15 @@ func Setup(Router *gin.Engine) {
 
 	InitRunRouter(PrivateGroup)
 	InitDependencyRouter(PrivateGroup)
+	InitFileRouter(PrivateGroup)
+}
+
+func InitFileRouter(Router *gin.RouterGroup) {
+	fileRouter := Router.Group("file")
+	{
+		fileRouter.POST("upload", UploadFileController)
+		fileRouter.POST("download", DownloadFileController)
+	}
 }
 
 func InitDependencyRouter(Router *gin.RouterGroup) {
