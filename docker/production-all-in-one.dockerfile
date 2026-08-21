@@ -7,18 +7,15 @@
 # With custom tag:
 #   docker build -f docker/production-all-in-one.dockerfile -t my-registry/dify-sandbox:v1.0.0 .
 
+# Global ARGs (used in FROM statements)
 ARG PYTHON_VERSION=python:3.12-bookworm
 ARG GOLANG_VERSION=1.25.0
-ARG DEBIAN_MIRROR="http://deb.debian.org/debian testing main"
-ARG PYTHON_PACKAGES="httpx==0.27.2 requests==2.33.0 jinja2==3.1.6 PySocks httpx[socks]"
-ARG NODEJS_VERSION=v20.20.0
-ARG NODEJS_MIRROR="https://npmmirror.com/mirrors/node"
-ARG TARGETARCH
 
 # ============================================================
 # Stage 1: Build all Go binaries inside a container
 # ============================================================
 FROM golang:${GOLANG_VERSION} AS builder
+
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -62,6 +59,13 @@ RUN GOOS=linux go build \
 # Stage 2: Production image
 # ============================================================
 FROM ${PYTHON_VERSION}
+
+# Re-declare ARGs after FROM (they lose scope after FROM in multi-stage builds)
+ARG DEBIAN_MIRROR=http://deb.debian.org/debian testing main
+ARG PYTHON_PACKAGES="httpx==0.27.2 requests==2.33.0 jinja2==3.1.6 PySocks httpx[socks]"
+ARG NODEJS_VERSION=v20.20.0
+ARG NODEJS_MIRROR=https://npmmirror.com/mirrors/node
+ARG TARGETARCH
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -114,7 +118,9 @@ RUN case "${TARGETARCH}" in \
     && rm -f /env
 
 # Set environment variables for entrypoint
-ENV NODE_TAR_XZ=/opt/node-${NODEJS_VERSION}-linux-__ARCH__.tar.xz
-ENV NODE_DIR=/opt/node-${NODEJS_VERSION}-linux-__ARCH__
+# Note: ARG values are not available in ENV after build, so we use fixed values
+# The entrypoint.sh will handle the actual Node.js decompression
+ENV NODE_TAR_XZ=/opt/node-v20.20.0-linux-x64.tar.xz
+ENV NODE_DIR=/opt/node-v20.20.0-linux-x64
 
 ENTRYPOINT ["/entrypoint.sh"]
