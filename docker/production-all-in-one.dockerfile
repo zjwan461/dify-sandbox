@@ -7,7 +7,7 @@
 # With custom tag:
 #   docker build -f docker/production-all-in-one.dockerfile -t my-registry/dify-sandbox:v1.0.0 .
 
-ARG PYTHON_VERSION=dhi.io/python:3-debian13-sfw-ent-dev
+ARG PYTHON_VERSION=python:3.12-bookworm
 ARG GOLANG_VERSION=1.25.0
 ARG DEBIAN_MIRROR="http://deb.debian.org/debian testing main"
 ARG PYTHON_PACKAGES="httpx==0.27.2 requests==2.33.0 jinja2==3.1.6 PySocks httpx[socks]"
