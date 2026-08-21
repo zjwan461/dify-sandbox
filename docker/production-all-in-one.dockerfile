@@ -61,7 +61,6 @@ RUN GOOS=linux go build \
 FROM ${PYTHON_VERSION}
 
 # Re-declare ARGs after FROM (they lose scope after FROM in multi-stage builds)
-ARG DEBIAN_MIRROR=http://deb.debian.org/debian testing main
 ARG PYTHON_PACKAGES="httpx==0.27.2 requests==2.33.0 jinja2==3.1.6 PySocks httpx[socks]"
 ARG NODEJS_VERSION=v20.20.0
 ARG NODEJS_MIRROR=https://npmmirror.com/mirrors/node
@@ -69,9 +68,8 @@ ARG TARGETARCH
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies
-RUN echo "deb ${DEBIAN_MIRROR}" > /etc/apt/sources.list \
-    && apt-get update \
+# Install system dependencies (use default apt sources from base image)
+RUN apt-get update \
     && apt-get install -y --no-install-recommends \
        -o Dpkg::Options::="--force-confdef" \
        -o Dpkg::Options::="--force-confold" \
