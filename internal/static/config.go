@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -117,6 +118,16 @@ func InitConfig(path string) error {
 	if difySandboxGlobalConfigurations.PythonDepsUpdateInterval == "" {
 		difySandboxGlobalConfigurations.PythonDepsUpdateInterval = "30m"
 	}
+
+	// Set default upload directory and convert to absolute path
+	if difySandboxGlobalConfigurations.UploadDir == "" {
+		difySandboxGlobalConfigurations.UploadDir = "./uploads"
+	}
+	absUploadDir, err := filepath.Abs(difySandboxGlobalConfigurations.UploadDir)
+	if err != nil {
+		return fmt.Errorf("resolve upload_dir %q: %w", difySandboxGlobalConfigurations.UploadDir, err)
+	}
+	difySandboxGlobalConfigurations.UploadDir = absUploadDir
 
 	nodejs_path := os.Getenv("NODEJS_PATH")
 	if nodejs_path != "" {

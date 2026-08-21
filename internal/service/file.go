@@ -8,11 +8,8 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/langgenius/dify-sandbox/internal/static"
 	"github.com/langgenius/dify-sandbox/internal/types"
-)
-
-const (
-	uploadDir = "./uploads"
 )
 
 // UploadFileResponse is the response for file upload
@@ -23,6 +20,8 @@ type UploadFileResponse struct {
 
 // UploadFile saves an uploaded file to the uploads directory
 func UploadFile(file io.Reader, filename string, size int64) (*types.DifySandboxResponse, error) {
+	uploadDir := static.GetDifySandboxGlobalConfigurations().UploadDir
+
 	// Ensure upload directory exists
 	if err := os.MkdirAll(uploadDir, 0755); err != nil {
 		return types.ErrorResponse(-500, fmt.Sprintf("failed to create upload directory: %v", err)), nil
@@ -67,6 +66,7 @@ func DownloadFile(filename string) (string, error) {
 		return "", fmt.Errorf("invalid filename")
 	}
 
+	uploadDir := static.GetDifySandboxGlobalConfigurations().UploadDir
 	filePath := filepath.Join(uploadDir, filename)
 
 	// Check if file exists

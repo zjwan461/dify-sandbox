@@ -21,6 +21,7 @@ type DifySandboxGlobalConfigurations struct {
 	EnablePreload            bool     `yaml:"enable_preload"`
 	AllowedSyscalls          []int    `yaml:"allowed_syscalls"`
 	LogPath                  string   `yaml:"log_path"`
+	UploadDir                string   `yaml:"upload_dir"`
 	Proxy                    struct {
 		Socks5  string `yaml:"socks5"`
 		Https   string `yaml:"https"`
