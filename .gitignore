@@ -12,3 +12,6 @@ main
 
 *.gen.dockerfile
 __pycache__/
+.venv
+dist/
+dify_sandbox.egg-info/

@@ -36,4 +36,5 @@ setup(
             "mypy>=0.900",
         ],
     },
+    licence="MIT",
 )
